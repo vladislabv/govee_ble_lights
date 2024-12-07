@@ -28,6 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 EFFECT_PARSE = re.compile("\[(\d+)/(\d+)/(\d+)/(\d+)]")
 SEGMENTED_MODELS = ['H6053', 'H6072', 'H6102', 'H6199']
+SMOOTH_MODELS = ['H613A', 'H613B', 'H613C', 'H613D', 'H613E', 'H613F', 'H613G']
 
 class LedCommand(IntEnum):
     """ A control command packet's type. """
@@ -43,6 +44,7 @@ class LedMode(IntEnum):
     Currently only manual is supported.
     """
     MANUAL = 0x02
+    SMOOTH = 0x0d
     MICROPHONE = 0x06
     SCENES = 0x05
     SEGMENTS = 0x15
@@ -189,6 +191,7 @@ class GoveeBluetoothLight(LightEntity):
         self._is_segmented = self._model in SEGMENTED_MODELS
         self._ble_device = ble_device
         self._state = None
+        self._is_smooth = self._model in SMOOTH_MODELS
         self._brightness = None
 
     @property
@@ -245,6 +248,8 @@ class GoveeBluetoothLight(LightEntity):
                 commands.append(self._prepareSinglePacketData(LedCommand.COLOR,
                                                               [LedMode.SEGMENTS, 0x01, red, green, blue, 0x00, 0x00, 0x00,
                                                                0x00, 0x00, 0xFF, 0x7F]))
+            elif self._is_smooth:
+                commands.append(self._prepareSinglePacketData(LedCommand.COLOR, [LedMode.SMOOTH, red, green, blue]))
             else:
                 commands.append(self._prepareSinglePacketData(LedCommand.COLOR, [LedMode.MANUAL, red, green, blue]))
         if ATTR_EFFECT in kwargs:
